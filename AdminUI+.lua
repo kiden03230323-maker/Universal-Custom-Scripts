@@ -1,4 +1,4 @@
--- // ZyronX UI Library (Core Engine) - Optimized for Zero Lag Loops
+-- // Admainian (Core Engine) - Optimized for Zero Lag Loops
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
