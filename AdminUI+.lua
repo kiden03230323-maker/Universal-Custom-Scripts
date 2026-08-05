@@ -1,6 +1,22 @@
--- // Admainian (Core Engine) - Optimized for Zero Lag Loops
--- // MODIFIED: Added image support for toggles + fixed blank canvas issue
--- // Original by Hypol-X -- Modified by Exo_Blox
+🔵🔵🔵🔵🔵🔵🔵   🔵           🔵   🔵🔵🔵🔵🔵🔵🔵
+🔵               🔵         🔵     🔵           🔵
+🔵               🔵       🔵       🔵           🔵
+🔵🔵🔵🔵🔵🔵🔵     🔵     🔵         🔵           🔵
+🔵               🔵       🔵       🔵           🔵
+🔵               🔵         🔵     🔵           🔵
+🔵🔵🔵🔵🔵🔵🔵   🔵           🔵   🔵🔵🔵🔵🔵🔵🔵
+-- =========================================================================
+-- Admainian+ UI Library
+-- Copyright (c) 2026 Exo_Blox. All Rights Reserved.
+-- =========================================================================
+-- This software and its associated files are the proprietary and
+-- confidential property of the copyright holder. 
+-- Unauthorized copying, modification, distribution, or use of this software,
+-- via any medium, is strictly prohibited without prior written consent.
+-- -------------------------------------------------------------------------
+-- If you are reading this and you did not obtain this script directly from
+-- Exo_Blox, you are in violation of the Digital Millennium Copyright Act.
+-- =========================================================================
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
