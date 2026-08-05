@@ -1,22 +1,6 @@
-🔵🔵🔵🔵🔵🔵🔵   🔵           🔵   🔵🔵🔵🔵🔵🔵🔵
-🔵               🔵         🔵     🔵           🔵
-🔵               🔵       🔵       🔵           🔵
-🔵🔵🔵🔵🔵🔵🔵     🔵     🔵         🔵           🔵
-🔵               🔵       🔵       🔵           🔵
-🔵               🔵         🔵     🔵           🔵
-🔵🔵🔵🔵🔵🔵🔵   🔵           🔵   🔵🔵🔵🔵🔵🔵🔵
--- =========================================================================                     
--- Admainian+ UI Library
--- Copyright (c) 2026 Exo_Blox. All Rights Reserved.
--- =========================================================================
--- This software and its associated files are the proprietary and
--- confidential property of the copyright holder. 
--- Unauthorized copying, modification, distribution, or use of this software,
--- via any medium, is strictly prohibited without prior written consent.
--- -------------------------------------------------------------------------
--- If you are reading this and you did not obtain this script directly from
--- Exo_Blox, you are in violation of the Digital Millennium Copyright Act.
--- =========================================================================
+-- // Admainian (Core Engine) - Optimized for Zero Lag Loops
+-- // MODIFIED: Added image support for toggles + fixed blank canvas issue
+-- // Original by Hypol-X -- Modified by Exo_Blox
 
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -694,10 +678,45 @@ function Library:CreateWindow(options)
             local L_Layout = Create("UIListLayout", {Parent = LeftColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
             local R_Layout = Create("UIListLayout", {Parent = RightColumn, SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10)})
             
-            L_Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() PageScroll.CanvasSize = UDim2.new(0, 0, 0, math.max(L_Layout.AbsoluteContentSize.Y, R_Layout.AbsoluteContentSize.Y) + 20) end)
-            R_Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() PageScroll.CanvasSize = UDim2.new(0, 0, 0, math.max(L_Layout.AbsoluteContentSize.Y, R_Layout.AbsoluteContentSize.Y) + 20) end)
+            -- // FIX: Force canvas update when layout content changes
+            local function UpdateCanvas()
+                local leftHeight = L_Layout.AbsoluteContentSize.Y
+                local rightHeight = R_Layout.AbsoluteContentSize.Y
+                local maxHeight = math.max(leftHeight, rightHeight)
+                PageScroll.CanvasSize = UDim2.new(0, 0, 0, maxHeight + 20)
+            end
 
-            local PageObj = {Scroll = PageScroll, Btn = PageBtn, Highlight = PageHighlight, Left = true, LeftCol = LeftColumn, RightCol = RightColumn}
+            L_Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvas)
+            R_Layout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(UpdateCanvas)
+
+            -- // FIX: Force canvas update when page becomes visible
+            local function OnPageShown()
+                task.defer(function()
+                    task.wait(0.05) -- let layout settle
+                    UpdateCanvas()
+                end)
+            end
+
+            -- Hook into the page visibility change
+            local pageContainer = PageContainer
+            local pageScroll = PageScroll
+
+            local visibilityConn
+            visibilityConn = pageContainer:GetPropertyChangedSignal("Visible"):Connect(function()
+                if pageContainer.Visible and pageScroll.Visible then
+                    OnPageShown()
+                end
+            end)
+
+            -- Also hook into the scroll's own visibility
+            local scrollVisConn
+            scrollVisConn = pageScroll:GetPropertyChangedSignal("Visible"):Connect(function()
+                if pageScroll.Visible then
+                    OnPageShown()
+                end
+            end)
+
+            local PageObj = {Scroll = PageScroll, Btn = PageBtn, Highlight = PageHighlight, Left = true, LeftCol = LeftColumn, RightCol = RightColumn, _updateCanvas = UpdateCanvas}
             table.insert(TabConfig.Pages, PageObj)
 
             PageBtn.MouseButton1Click:Connect(function()
@@ -709,6 +728,7 @@ function Library:CreateWindow(options)
                 end
                 TabConfig.CurrentPage = PageObj
                 PageObj.Scroll.Visible = true
+                OnPageShown()
                 
                 PageObj.Scroll.Position = UDim2.new(0, 5, 0, 20)
                 Tween(PageObj.Scroll, {Position = UDim2.new(0, 5, 0, 5)}, 0.35)
@@ -720,6 +740,7 @@ function Library:CreateWindow(options)
             if #TabConfig.Pages == 1 and not isLocked then
                 TabConfig.CurrentPage = PageObj
                 PageObj.Scroll.Visible = true
+                OnPageShown()
                 PageBtn.TextColor3 = TextColor
                 PageHighlight.Size = UDim2.new(1, 0, 0, 2)
                 PageHighlight.BackgroundTransparency = 0
@@ -785,30 +806,57 @@ function Library:CreateWindow(options)
                     AddInfoIcon(BtnFrame, UDim2.new(1, -40, 0.5, -8), infoData)
                 end
 
+                -- // MODIFIED: AddToggle now supports 'Image' parameter in infoData
                 function Elements:AddToggle(name, default, callback, infoData)
                     local state = default or false
-                    local TogFrame = Create("Frame", {Parent = ItemContainer, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 24)})
+                    local image = infoData and infoData.Image
+                    local toggleHeight = image and 55 or 24  -- increase height if image present
+                    local TogFrame = Create("Frame", {Parent = ItemContainer, BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, toggleHeight)})
                     
-                    Create("TextLabel", {Parent = TogFrame, Text = name, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = SubTextColor, BackgroundTransparency = 1, Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 10, 0, 0), TextXAlignment = Enum.TextXAlignment.Left})
-                    
-                    local Lever = Create("TextButton", {Parent = TogFrame, Text = "", BackgroundColor3 = state and AccentColor or Color3.fromRGB(45, 45, 50), Size = UDim2.new(0, 36, 0, 18), Position = UDim2.new(1, -46, 0.5, -9), AutoButtonColor = false})
-                    Create("UICorner", {Parent = Lever, CornerRadius = UDim.new(1, 0)})
-                    AddBounce(Lever)
-                    
-                    local Knob = Create("Frame", {Parent = Lever, BackgroundColor3 = Color3.fromRGB(255, 255, 255), Size = UDim2.new(0, 14, 0, 14), Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)})
-                    Create("UICorner", {Parent = Knob, CornerRadius = UDim.new(1, 0)})
+                    -- If image provided, create an ImageLabel above the toggle
+                    if image then
+                        local Img = Create("ImageLabel", {Parent = TogFrame, Image = image, BackgroundTransparency = 1, Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(0, 10, 0, 2), ScaleType = Enum.ScaleType.Fit})
+                        Create("TextLabel", {Parent = TogFrame, Text = name, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = SubTextColor, BackgroundTransparency = 1, Size = UDim2.new(1, -80, 0, 16), Position = UDim2.new(0, 40, 0, 2), TextXAlignment = Enum.TextXAlignment.Left})
+                        
+                        local Lever = Create("TextButton", {Parent = TogFrame, Text = "", BackgroundColor3 = state and AccentColor or Color3.fromRGB(45, 45, 50), Size = UDim2.new(0, 36, 0, 18), Position = UDim2.new(1, -46, 0.5, 10), AutoButtonColor = false})
+                        Create("UICorner", {Parent = Lever, CornerRadius = UDim.new(1, 0)})
+                        AddBounce(Lever)
+                        
+                        local Knob = Create("Frame", {Parent = Lever, BackgroundColor3 = Color3.fromRGB(255, 255, 255), Size = UDim2.new(0, 14, 0, 14), Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)})
+                        Create("UICorner", {Parent = Knob, CornerRadius = UDim.new(1, 0)})
 
-                    local function internalSet(val)
-                        state = val
-                        Tween(Lever, {BackgroundColor3 = state and AccentColor or Color3.fromRGB(45, 45, 50)}, 0.3)
-                        Tween(Knob, {Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}, 0.3)
-                        if callback then callback(state) end
+                        local function internalSet(val)
+                            state = val
+                            Tween(Lever, {BackgroundColor3 = state and AccentColor or Color3.fromRGB(45, 45, 50)}, 0.3)
+                            Tween(Knob, {Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}, 0.3)
+                            if callback then callback(state) end
+                        end
+
+                        Lever.MouseButton1Click:Connect(function() internalSet(not state) end)
+                        AddInfoIcon(TogFrame, UDim2.new(1, -70, 0.5, -8), infoData)
+                        Window.ConfigElements[name] = { Set = internalSet, Get = function() return state end }
+                    else
+                        -- Original toggle layout (no image)
+                        Create("TextLabel", {Parent = TogFrame, Text = name, Font = Enum.Font.Gotham, TextSize = 12, TextColor3 = SubTextColor, BackgroundTransparency = 1, Size = UDim2.new(1, -60, 1, 0), Position = UDim2.new(0, 10, 0, 0), TextXAlignment = Enum.TextXAlignment.Left})
+                        
+                        local Lever = Create("TextButton", {Parent = TogFrame, Text = "", BackgroundColor3 = state and AccentColor or Color3.fromRGB(45, 45, 50), Size = UDim2.new(0, 36, 0, 18), Position = UDim2.new(1, -46, 0.5, -9), AutoButtonColor = false})
+                        Create("UICorner", {Parent = Lever, CornerRadius = UDim.new(1, 0)})
+                        AddBounce(Lever)
+                        
+                        local Knob = Create("Frame", {Parent = Lever, BackgroundColor3 = Color3.fromRGB(255, 255, 255), Size = UDim2.new(0, 14, 0, 14), Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)})
+                        Create("UICorner", {Parent = Knob, CornerRadius = UDim.new(1, 0)})
+
+                        local function internalSet(val)
+                            state = val
+                            Tween(Lever, {BackgroundColor3 = state and AccentColor or Color3.fromRGB(45, 45, 50)}, 0.3)
+                            Tween(Knob, {Position = state and UDim2.new(1, -16, 0.5, -7) or UDim2.new(0, 2, 0.5, -7)}, 0.3)
+                            if callback then callback(state) end
+                        end
+
+                        Lever.MouseButton1Click:Connect(function() internalSet(not state) end)
+                        AddInfoIcon(TogFrame, UDim2.new(1, -70, 0.5, -8), infoData)
+                        Window.ConfigElements[name] = { Set = internalSet, Get = function() return state end }
                     end
-
-                    Lever.MouseButton1Click:Connect(function() internalSet(not state) end)
-                    AddInfoIcon(TogFrame, UDim2.new(1, -70, 0.5, -8), infoData)
-                    
-                    Window.ConfigElements[name] = { Set = internalSet, Get = function() return state end }
                 end
 
                 function Elements:AddSlider(name, min, max, default, callback, infoData)
